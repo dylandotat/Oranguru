@@ -14,6 +14,10 @@ RUN composer install --no-dev --optimize-autoloader
 # Copy app files into web root
 COPY app/ /var/www/html/
 
+# Download QR libraries
+RUN curl -sL -o /var/www/html/qrcode.min.js "https://unpkg.com/qrcode-generator@1.4.4/qrcode.js" \
+    && curl -sL -o /var/www/html/jsqr.min.js "https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"
+
 # Copy PHP endpoints into web root
 COPY server/public/ /var/www/html/
 
