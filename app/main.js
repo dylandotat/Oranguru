@@ -913,11 +913,11 @@ function applySyncState(state) {
     applyYDocToLocalStorage();
   }
   else {
-    localStorage.setItem("date", state.date);
-    localStorage.setItem("value.today", state.today);
-    localStorage.setItem("value.inbox", state.inbox);
+    localStorage.setItem("date", state.date || "");
+    localStorage.setItem("value.today", state.today || "");
+    localStorage.setItem("value.inbox", state.inbox || "");
     for (const key of weekdayKeys) {
-      localStorage.setItem(`routine.${key}`, state.routine[key]);
+      localStorage.setItem(`routine.${key}`, (state.routine && state.routine[key]) || "");
     }
     if ("achievements" in state) {
       localStorage.setItem("achievements", JSON.stringify(state.achievements));
@@ -1190,7 +1190,10 @@ async function pullState() {
     syncVersion = result.version;
     localStorage.setItem("sync.version", syncVersion.toString());
     const envelope = JSON.parse(decrypted.data);
-    if (ydocReady && envelope.format === "yjs") {
+    if (envelope.format === "yjs") {
+      if (!ydocReady) {
+        await initYDoc();
+      }
       const remoteUpdate = Uint8Array.from(atob(envelope.data), c => c.charCodeAt(0));
       Y.applyUpdate(ydoc, remoteUpdate);
       applyYDocToLocalStorage();
