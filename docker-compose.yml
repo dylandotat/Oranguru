@@ -1,0 +1,11 @@
+services:
+  frogtab:
+    build: .
+    ports:
+      - "80:80"
+    volumes:
+      - frogtab-data:/data
+    restart: unless-stopped
+
+volumes:
+  frogtab-data:
