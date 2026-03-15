@@ -857,6 +857,121 @@ function requestSave() {
     timeoutSave.id = window.setTimeout(saveToFile, 1500);
     timeoutSave.waiting = true;
   }
+  if (localStorage.getItem("user.userID") !== null && attr("save") !== "service") {
+    window.clearTimeout(timeoutSync);
+    timeoutSync = window.setTimeout(pushState, 3000);
+  }
+}
+
+function createSyncState() {
+  const state = {
+    date: localStorage.getItem("date"),
+    today: localStorage.getItem("value.today").trim(),
+    inbox: localStorage.getItem("value.inbox").trim(),
+    routine: {}
+  };
+  for (const key of weekdayKeys) {
+    state.routine[key] = localStorage.getItem(`routine.${key}`).trim();
+  }
+  if (localStorage.getItem("achievements") !== null) {
+    state.achievements = JSON.parse(localStorage.getItem("achievements"));
+  }
+  return state;
+}
+
+function applySyncState(state) {
+  localStorage.setItem("date", state.date);
+  localStorage.setItem("value.today", state.today);
+  localStorage.setItem("value.inbox", state.inbox);
+  for (const key of weekdayKeys) {
+    localStorage.setItem(`routine.${key}`, state.routine[key]);
+  }
+  if ("achievements" in state) {
+    localStorage.setItem("achievements", JSON.stringify(state.achievements));
+  }
+  else {
+    localStorage.removeItem("achievements");
+  }
+  refreshView();
+}
+
+async function pushState() {
+  if (openpgp === undefined) {
+    openpgp = await import("./openpgp.min.mjs?sha1=10537e7469a1cffc78969c32fe52216896b36c64");
+  }
+  syncVersion++;
+  localStorage.setItem("sync.version", syncVersion.toString());
+  const stateJSON = JSON.stringify(createSyncState());
+  const pgpPublicKeyObj = await openpgp.readKey({
+    armoredKey: localStorage.getItem("user.pgpPublicKey")
+  });
+  const encrypted = await openpgp.encrypt({
+    message: await openpgp.createMessage({ text: stateJSON }),
+    encryptionKeys: pgpPublicKeyObj
+  });
+  try {
+    await fetch(`${attr("server-base")}open/post-save-state`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_id: localStorage.getItem("user.userID"),
+        api_key: localStorage.getItem("user.apiKey"),
+        encrypted_state: encrypted,
+        version: syncVersion
+      })
+    });
+  }
+  catch (err) {
+    return;
+  }
+}
+
+async function pullState() {
+  if (openpgp === undefined) {
+    openpgp = await import("./openpgp.min.mjs?sha1=10537e7469a1cffc78969c32fe52216896b36c64");
+  }
+  lastSync = Date.now();
+  let response;
+  try {
+    response = await fetch(`${attr("server-base")}open/post-load-state`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        user_id: localStorage.getItem("user.userID"),
+        api_key: localStorage.getItem("user.apiKey")
+      })
+    });
+  }
+  catch (err) {
+    return;
+  }
+  if (!response.ok) {
+    return;
+  }
+  const result = await response.json();
+  if (!result.success || result.encrypted_state === null) {
+    return;
+  }
+  if (result.version > syncVersion) {
+    const pgpPrivateKeyObj = await openpgp.readKey({
+      armoredKey: localStorage.getItem("user.pgpPrivateKey")
+    });
+    const decrypted = await openpgp.decrypt({
+      message: await openpgp.readMessage({
+        armoredMessage: result.encrypted_state
+      }),
+      decryptionKeys: pgpPrivateKeyObj
+    });
+    const state = JSON.parse(decrypted.data);
+    syncVersion = result.version;
+    localStorage.setItem("sync.version", syncVersion.toString());
+    applySyncState(state);
+    setNotifyStatus();
+  }
 }
 
 async function tryLocalPair() {
@@ -1266,6 +1381,9 @@ async function startApp() {
         setNotifyStatus();
         refreshView();
       }
+      if (verifiedUser && lastSync <= Date.now() - 600000) {
+        await pullState();
+      }
     }
     if (
       document.hidden && lastActive <= Date.now() - 30000
@@ -1301,11 +1419,14 @@ async function startApp() {
         // we'll set the last message fetch to be 8 minutes ago.
         // Then Frogtab will do another message fetch in 2 minutes.
         lastAppend -= 480000;
+        syncVersion = parseInt(localStorage.getItem("sync.version") || "0");
+        await pullState();
       }
     }
     else if (localStorage.getItem("user.userID") === null && userIDTested !== null) {
       userIDTested = null;
       verifiedUser = false;
+      syncVersion = 0;
       dom.fetchConnected.classList.remove("display");
     }
     setNotifyStatus();
@@ -1410,6 +1531,9 @@ let lastActive = Date.now();
 let userIDTested = null;
 let verifiedUser = false;
 let lastAppend = 0;
+let timeoutSync = 0;
+let lastSync = 0;
+let syncVersion = parseInt(localStorage.getItem("sync.version") || "0");
 let openpgp;
 const platformApple = (
   navigator.platform.startsWith("Mac")

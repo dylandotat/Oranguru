@@ -260,6 +260,39 @@
           <p>
             <a tabindex="0" href="#privacy-implications-of-registering">Learn about data privacy</a>
           </p>
+          <p>
+            <a tabindex="0" href="#" id="start-scan-device">Already registered? Link this device</a>
+          </p>
+        </div>
+      </div>
+      <div tabindex="-1" id="case-scan-device" class="notice">
+        <div class="display">
+          <p>
+            Scan the QR code shown on your other device, or paste the pairing code.
+          </p>
+          <div>
+            <video id="scan-video" style="max-width: 256px; display: none;" autoplay playsinline></video>
+          </div>
+          <div>
+            <button tabindex="0" id="start-camera">Scan QR Code</button>
+          </div>
+          <div>
+            <input tabindex="0" id="pairing-input" style="width: 100%" type="text" placeholder="Or paste pairing code…">
+          </div>
+          <div>
+            <button tabindex="0" id="claim-pairing">Link This Device</button>
+          </div>
+          <p id="scan-status"></p>
+          <div>
+            <button tabindex="0" id="cancel-scan-device">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div id="case-claiming" class="notice">
+        <div class="display">
+          <p>
+            Linking this device…
+          </p>
         </div>
       </div>
       <div id="case-registering" class="notice">
@@ -281,7 +314,31 @@
             <a tabindex="0" href="#privacy-implications-of-registering">Learn about data privacy</a>
           </p>
           <p>
+            <a tabindex="0" href="#" id="start-link-device">Link another device</a>
+          </p>
+          <p>
             <a tabindex="0" href="#" id="start-forget">Forget this device</a>
+          </p>
+        </div>
+      </div>
+      <div tabindex="-1" id="case-link-device" class="notice">
+        <div class="display">
+          <p>
+            Scan this QR code on your other device. Expires in 5 minutes.
+          </p>
+          <div>
+            <canvas id="qr-canvas" width="256" height="256" style="image-rendering: pixelated; max-width: 256px;"></canvas>
+          </div>
+          <p id="pairing-code-display"></p>
+          <div>
+            <button tabindex="0" id="cancel-link-device">Cancel</button>
+          </div>
+        </div>
+      </div>
+      <div id="case-linking" class="notice">
+        <div class="display">
+          <p>
+            Preparing pairing code…
           </p>
         </div>
       </div>
@@ -945,6 +1002,7 @@
           localStorage.removeItem("user.apiKey");
           localStorage.removeItem("user.pgpPrivateKey");
           localStorage.removeItem("user.pgpPublicKey");
+          localStorage.removeItem("sync.version");
         });
         dom.caseForgetting.classList.remove("display");
         if (verifiedUser) {
@@ -1004,6 +1062,229 @@
       function checkForLocalUnpaired() {
         if (attr("save") == "service" && localStorage.getItem("localKey") === null) {
           document.documentElement.setAttribute("data-save", "none");
+        }
+      }
+
+      function hexEncode(buffer) {
+        return Array.from(new Uint8Array(buffer)).map(b => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      function hexDecode(hex) {
+        const bytes = new Uint8Array(hex.length / 2);
+        for (let i = 0; i < hex.length; i += 2) {
+          bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16);
+        }
+        return bytes;
+      }
+
+      async function linkDevice() {
+        const pairingSecret = crypto.getRandomValues(new Uint8Array(32));
+        const bundle = JSON.stringify({
+          userID: localStorage.getItem("user.userID"),
+          apiKey: localStorage.getItem("user.apiKey"),
+          pgpPublicKey: localStorage.getItem("user.pgpPublicKey"),
+          pgpPrivateKey: localStorage.getItem("user.pgpPrivateKey")
+        });
+        const cryptoKey = await crypto.subtle.importKey(
+          "raw", pairingSecret, { name: "AES-GCM" }, false, ["encrypt"]
+        );
+        const iv = crypto.getRandomValues(new Uint8Array(12));
+        const encrypted = await crypto.subtle.encrypt(
+          { name: "AES-GCM", iv: iv },
+          cryptoKey,
+          (new TextEncoder()).encode(bundle)
+        );
+        const encryptedBundle = btoa(String.fromCharCode(
+          ...iv, ...new Uint8Array(encrypted)
+        ));
+        let response;
+        try {
+          response = await fetch(`${attr("server-base")}open/post-create-pairing`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              user_id: localStorage.getItem("user.userID"),
+              api_key: localStorage.getItem("user.apiKey"),
+              encrypted_bundle: encryptedBundle
+            })
+          });
+        }
+        catch (err) {
+          dom.caseLinking.classList.remove("display");
+          dom.caseRegistered.classList.add("display");
+          return;
+        }
+        if (!response.ok) {
+          dom.caseLinking.classList.remove("display");
+          dom.caseRegistered.classList.add("display");
+          return;
+        }
+        const result = await response.json();
+        if (!result.success) {
+          dom.caseLinking.classList.remove("display");
+          dom.caseRegistered.classList.add("display");
+          return;
+        }
+        const pairingCode = `${result.pairing_id}:${hexEncode(pairingSecret)}`;
+        dom.pairingCodeDisplay.textContent = pairingCode;
+        if (typeof qrcode === "undefined") {
+          await loadScript("qrcode.min.js");
+        }
+        const qr = qrcode(0, "M");
+        qr.addData(pairingCode);
+        qr.make();
+        const canvas = dom.qrCanvas;
+        const ctx = canvas.getContext("2d");
+        const moduleCount = qr.getModuleCount();
+        const cellSize = Math.floor(256 / moduleCount);
+        canvas.width = moduleCount * cellSize;
+        canvas.height = moduleCount * cellSize;
+        ctx.fillStyle = "#ffffff";
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+        ctx.fillStyle = "#000000";
+        for (let row = 0; row < moduleCount; row++) {
+          for (let col = 0; col < moduleCount; col++) {
+            if (qr.isDark(row, col)) {
+              ctx.fillRect(col * cellSize, row * cellSize, cellSize, cellSize);
+            }
+          }
+        }
+        dom.caseLinking.classList.remove("display");
+        dom.caseLinkDevice.classList.add("display");
+        dom.caseLinkDevice.focus();
+      }
+
+      function loadScript(src) {
+        return new Promise((resolve, reject) => {
+          const script = document.createElement("script");
+          script.src = src;
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      let cameraStream = null;
+      let scanInterval = null;
+
+      function stopCamera() {
+        if (scanInterval !== null) {
+          clearInterval(scanInterval);
+          scanInterval = null;
+        }
+        if (cameraStream !== null) {
+          for (const track of cameraStream.getTracks()) {
+            track.stop();
+          }
+          cameraStream = null;
+        }
+        dom.scanVideo.style.display = "none";
+      }
+
+      async function startCameraScan() {
+        try {
+          cameraStream = await navigator.mediaDevices.getUserMedia({
+            video: { facingMode: "environment" }
+          });
+        }
+        catch (err) {
+          dom.scanStatus.textContent = "Camera not available. Please paste the pairing code instead.";
+          return;
+        }
+        dom.scanVideo.srcObject = cameraStream;
+        dom.scanVideo.style.display = "block";
+        if (typeof jsQR === "undefined") {
+          await loadScript("jsqr.min.js");
+        }
+        const scanCanvas = document.createElement("canvas");
+        const scanCtx = scanCanvas.getContext("2d", { willReadFrequently: true });
+        scanInterval = setInterval(() => {
+          if (dom.scanVideo.videoWidth === 0) {
+            return;
+          }
+          scanCanvas.width = dom.scanVideo.videoWidth;
+          scanCanvas.height = dom.scanVideo.videoHeight;
+          scanCtx.drawImage(dom.scanVideo, 0, 0);
+          const imageData = scanCtx.getImageData(0, 0, scanCanvas.width, scanCanvas.height);
+          const code = jsQR(imageData.data, scanCanvas.width, scanCanvas.height);
+          if (code && code.data) {
+            stopCamera();
+            dom.pairingInput.value = code.data;
+            claimAndApplyPairing(code.data);
+          }
+        }, 250);
+      }
+
+      async function claimAndApplyPairing(pairingCode) {
+        const parts = pairingCode.split(":");
+        if (parts.length !== 2) {
+          dom.scanStatus.textContent = "Invalid pairing code format.";
+          return;
+        }
+        const [pairingId, secretHex] = parts;
+        dom.caseScanDevice.classList.remove("display");
+        dom.caseClaiming.classList.add("display");
+        stopCamera();
+        await delayForUX(async () => {
+          let response;
+          try {
+            response = await fetch(`${attr("server-base")}open/post-claim-pairing`, {
+              method: "POST",
+              headers: {
+                "Content-Type": "application/json"
+              },
+              body: JSON.stringify({
+                pairing_id: pairingId
+              })
+            });
+          }
+          catch (err) {
+            return;
+          }
+          if (!response.ok) {
+            return;
+          }
+          const result = await response.json();
+          if (!result.success) {
+            return;
+          }
+          const encryptedData = Uint8Array.from(atob(result.encrypted_bundle), c => c.charCodeAt(0));
+          const iv = encryptedData.slice(0, 12);
+          const ciphertext = encryptedData.slice(12);
+          const secretBytes = hexDecode(secretHex);
+          const cryptoKey = await crypto.subtle.importKey(
+            "raw", secretBytes, { name: "AES-GCM" }, false, ["decrypt"]
+          );
+          let decryptedData;
+          try {
+            decryptedData = await crypto.subtle.decrypt(
+              { name: "AES-GCM", iv: iv },
+              cryptoKey,
+              ciphertext
+            );
+          }
+          catch (err) {
+            return;
+          }
+          const bundle = JSON.parse((new TextDecoder()).decode(decryptedData));
+          localStorage.setItem("user.pgpPublicKey", bundle.pgpPublicKey);
+          localStorage.setItem("user.pgpPrivateKey", bundle.pgpPrivateKey);
+          localStorage.setItem("user.apiKey", bundle.apiKey);
+          localStorage.setItem("user.userID", bundle.userID); // Update userID last because other tabs may be watching
+          verifiedUser = true;
+        });
+        dom.caseClaiming.classList.remove("display");
+        if (verifiedUser) {
+          dom.caseRegistered.classList.add("display");
+          dom.caseRegistered.focus();
+          dom.link.href = getPersonalLink();
+        }
+        else {
+          dom.scanStatus.textContent = "Pairing failed. The code may have expired.";
+          dom.caseScanDevice.classList.add("display");
+          dom.caseScanDevice.focus();
         }
       }
 
@@ -1080,6 +1361,43 @@
           dom.caseRegisteredForget.classList.remove("display");
           dom.caseRegistered.classList.add("display");
           dom.caseRegistered.focus();
+        });
+        dom.startLinkDevice.addEventListener("click", async event => {
+          event.preventDefault();
+          dom.caseRegistered.classList.remove("display");
+          dom.caseLinking.classList.add("display");
+          await linkDevice();
+        });
+        dom.cancelLinkDevice.addEventListener("click", () => {
+          dom.caseLinkDevice.classList.remove("display");
+          dom.caseRegistered.classList.add("display");
+          dom.caseRegistered.focus();
+        });
+        dom.startScanDevice.addEventListener("click", event => {
+          event.preventDefault();
+          dom.caseUnregistered.classList.remove("display");
+          dom.caseScanDevice.classList.add("display");
+          dom.caseScanDevice.focus();
+        });
+        dom.cancelScanDevice.addEventListener("click", () => {
+          stopCamera();
+          dom.caseScanDevice.classList.remove("display");
+          dom.caseUnregistered.classList.add("display");
+          dom.caseUnregistered.focus();
+        });
+        dom.startCamera.addEventListener("click", async () => {
+          await startCameraScan();
+        });
+        dom.claimPairing.addEventListener("click", async () => {
+          const code = dom.pairingInput.value.trim();
+          if (code) {
+            await claimAndApplyPairing(code);
+          }
+        });
+        dom.pairingInput.addEventListener("keydown", async event => {
+          if (matchKeyboardEvent(event, "", "enter") && dom.pairingInput.value.trim()) {
+            await claimAndApplyPairing(dom.pairingInput.value.trim());
+          }
         });
         if (localStorage.getItem("restore") !== null) {
           setRestoreStatus(JSON.parse(localStorage.getItem("restore")));
@@ -1192,7 +1510,22 @@
         startDisableAchievements: document.getElementById("start-disable-achievements"),
         confirmDisableAchievements: document.getElementById("confirm-disable-achievements"),
         finishDisableAchievements: document.getElementById("finish-disable-achievements"),
-        cancelDisableAchievements: document.getElementById("cancel-disable-achievements")
+        cancelDisableAchievements: document.getElementById("cancel-disable-achievements"),
+        startLinkDevice: document.getElementById("start-link-device"),
+        caseLinkDevice: document.getElementById("case-link-device"),
+        caseLinking: document.getElementById("case-linking"),
+        qrCanvas: document.getElementById("qr-canvas"),
+        pairingCodeDisplay: document.getElementById("pairing-code-display"),
+        cancelLinkDevice: document.getElementById("cancel-link-device"),
+        startScanDevice: document.getElementById("start-scan-device"),
+        caseScanDevice: document.getElementById("case-scan-device"),
+        caseClaiming: document.getElementById("case-claiming"),
+        scanVideo: document.getElementById("scan-video"),
+        startCamera: document.getElementById("start-camera"),
+        pairingInput: document.getElementById("pairing-input"),
+        claimPairing: document.getElementById("claim-pairing"),
+        scanStatus: document.getElementById("scan-status"),
+        cancelScanDevice: document.getElementById("cancel-scan-device")
       };
       if (window.location.hash == "#importing-your-data") {
         window.location.hash = "#restoring-your-data"
