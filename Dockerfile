@@ -1,10 +1,10 @@
 FROM php:8.3-apache
 
-# Enable Apache modules
-RUN a2enmod rewrite headers
+# Enable Apache modules and install dependencies
+RUN a2enmod rewrite headers && apt-get update && apt-get install -y unzip && rm -rf /var/lib/apt/lists/*
 
 # Install composer
-COPY --from=composer:2 /usr/local/bin/composer /usr/local/bin/composer
+RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install PHP dependencies
 COPY server/packages /srv/frogtab-packages
