@@ -1252,6 +1252,18 @@ async function startApp() {
   dom.editor.inbox.addEventListener("focusin", () => {
     dom.menu.classList.remove("display");
   });
+  dom.editor.today.addEventListener("blur", () => {
+    if (localStorage.getItem("user.userID") !== null) {
+      window.clearTimeout(timeoutSync);
+      pushState();
+    }
+  });
+  dom.editor.inbox.addEventListener("blur", () => {
+    if (localStorage.getItem("user.userID") !== null) {
+      window.clearTimeout(timeoutSync);
+      pushState();
+    }
+  });
   dom.menu.addEventListener("keydown", event => {
     if (event.target.hasAttribute("data-menu-seq") && matchKeyboardEvent(event, "", "arrowdown")) {
       event.preventDefault();
