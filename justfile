@@ -80,3 +80,4 @@ _app-libs:
   wget -O openpgp.min.mjs "https://unpkg.com/openpgp@5.x/dist/openpgp.min.mjs"
   wget -O qrcode.min.js "https://unpkg.com/qrcode-generator@1.4.4/qrcode.js"
   wget -O jsqr.min.js "https://unpkg.com/jsqr@1.4.0/dist/jsQR.js"
+  npx esbuild node_modules/yjs/dist/yjs.mjs --bundle --format=esm --outfile=yjs.mjs --minify

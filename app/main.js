@@ -662,8 +662,11 @@ function updateValues() {
   let storedInboxValue = unsnoozeEverything(localStorage.getItem("value.inbox"));
   storedInboxValue = appendToTopAndRemoveDupes(storedInboxValue, routine);
   storedInboxValue = appendToTopAndRemoveDupes(storedInboxValue, storedTodayValue);
+  ydocBatching = true;
   storeThenSave("value.today", "");
   storeThenSave("value.inbox", storedInboxValue);
+  ydocBatching = false;
+  persistYDoc();
 }
 
 function isNewDay() {
@@ -825,6 +828,12 @@ function createDataJSON() {
 
 function storeThenSave(key, value) {
   localStorage.setItem(key, value);
+  if (key === "achievements") {
+    syncAchievementsToYDoc(value);
+  }
+  else {
+    syncTextToYDoc(key, value);
+  }
   requestSave();
 }
 
@@ -880,33 +889,225 @@ function createSyncState() {
 }
 
 function applySyncState(state) {
-  localStorage.setItem("date", state.date);
-  localStorage.setItem("value.today", state.today);
-  localStorage.setItem("value.inbox", state.inbox);
-  for (const key of weekdayKeys) {
-    localStorage.setItem(`routine.${key}`, state.routine[key]);
-  }
-  if ("achievements" in state) {
-    localStorage.setItem("achievements", JSON.stringify(state.achievements));
+  if (ydocReady) {
+    applyLegacyStateToYDoc(state);
+    applyYDocToLocalStorage();
   }
   else {
-    localStorage.removeItem("achievements");
+    localStorage.setItem("date", state.date);
+    localStorage.setItem("value.today", state.today);
+    localStorage.setItem("value.inbox", state.inbox);
+    for (const key of weekdayKeys) {
+      localStorage.setItem(`routine.${key}`, state.routine[key]);
+    }
+    if ("achievements" in state) {
+      localStorage.setItem("achievements", JSON.stringify(state.achievements));
+    }
+    else {
+      localStorage.removeItem("achievements");
+    }
   }
   refreshView();
 }
 
+async function ensureYjs() {
+  if (Y === undefined) {
+    Y = await import("./yjs.mjs");
+  }
+}
+
+function applyTextDiff(ytext, oldText, newText) {
+  if (oldText === newText) {
+    return;
+  }
+  let start = 0;
+  while (start < oldText.length && start < newText.length && oldText[start] === newText[start]) {
+    start++;
+  }
+  let oldEnd = oldText.length;
+  let newEnd = newText.length;
+  while (oldEnd > start && newEnd > start && oldText[oldEnd - 1] === newText[newEnd - 1]) {
+    oldEnd--;
+    newEnd--;
+  }
+  ydoc.transact(() => {
+    if (oldEnd > start) {
+      ytext.delete(start, oldEnd - start);
+    }
+    if (newEnd > start) {
+      ytext.insert(start, newText.substring(start, newEnd));
+    }
+  });
+}
+
+function syncTextToYDoc(storageKey, newValue) {
+  if (!ydocReady) {
+    return;
+  }
+  let ytextKey;
+  if (storageKey === "value.today") {
+    ytextKey = "today";
+  }
+  else if (storageKey === "value.inbox") {
+    ytextKey = "inbox";
+  }
+  else if (storageKey === "date") {
+    ytextKey = "date";
+  }
+  else if (storageKey.startsWith("routine.")) {
+    ytextKey = storageKey;
+  }
+  else {
+    return;
+  }
+  const ytext = yTexts[ytextKey];
+  const oldText = ytext.toString();
+  applyTextDiff(ytext, oldText, newValue);
+}
+
+function syncAchievementsToYDoc(achievementsJSON) {
+  if (!ydocReady) {
+    return;
+  }
+  const achievements = JSON.parse(achievementsJSON);
+  const localDates = new Set(achievements.map(a => a.date));
+  ydoc.transact(() => {
+    for (const day of achievements) {
+      const existing = yAchievements.get(day.date);
+      if (!existing) {
+        const yArr = new Y.Array();
+        yArr.push(day.tasks);
+        yAchievements.set(day.date, yArr);
+      }
+      else {
+        existing.delete(0, existing.length);
+        existing.push(day.tasks);
+      }
+    }
+    yAchievements.forEach((_, dateStr) => {
+      if (!localDates.has(dateStr)) {
+        yAchievements.delete(dateStr);
+      }
+    });
+  });
+}
+
+function readAchievementsFromYDoc() {
+  const entries = [];
+  yAchievements.forEach((yArr, dateStr) => {
+    entries.push({ date: dateStr, tasks: yArr.toArray() });
+  });
+  entries.sort((a, b) => b.date.localeCompare(a.date));
+  return entries;
+}
+
+function persistYDoc() {
+  if (!ydocReady || ydocBatching) {
+    return;
+  }
+  const update = Y.encodeStateAsUpdate(ydoc);
+  let binary = "";
+  for (let i = 0; i < update.length; i++) {
+    binary += String.fromCharCode(update[i]);
+  }
+  localStorage.setItem("sync.ydoc", btoa(binary));
+}
+
+function applyYDocToLocalStorage() {
+  localStorage.setItem("date", yTexts["date"].toString());
+  localStorage.setItem("value.today", yTexts["today"].toString());
+  localStorage.setItem("value.inbox", yTexts["inbox"].toString());
+  for (const key of weekdayKeys) {
+    localStorage.setItem(`routine.${key}`, yTexts[`routine.${key}`].toString());
+  }
+  const achievements = readAchievementsFromYDoc();
+  if (achievements.length > 0) {
+    localStorage.setItem("achievements", JSON.stringify(achievements));
+  }
+  else {
+    localStorage.removeItem("achievements");
+  }
+}
+
+function applyLegacyStateToYDoc(state) {
+  ydoc.transact(() => {
+    applyTextDiff(yTexts["date"], yTexts["date"].toString(), state.date || "");
+    applyTextDiff(yTexts["today"], yTexts["today"].toString(), state.today || "");
+    applyTextDiff(yTexts["inbox"], yTexts["inbox"].toString(), state.inbox || "");
+    for (const key of weekdayKeys) {
+      applyTextDiff(
+        yTexts[`routine.${key}`],
+        yTexts[`routine.${key}`].toString(),
+        (state.routine && state.routine[key]) || ""
+      );
+    }
+    if (state.achievements) {
+      syncAchievementsToYDoc(JSON.stringify(state.achievements));
+    }
+  });
+}
+
+async function initYDoc() {
+  await ensureYjs();
+  ydoc = new Y.Doc();
+  yTexts["today"] = ydoc.getText("today");
+  yTexts["inbox"] = ydoc.getText("inbox");
+  yTexts["date"] = ydoc.getText("date");
+  for (const key of weekdayKeys) {
+    yTexts[`routine.${key}`] = ydoc.getText(`routine.${key}`);
+  }
+  yAchievements = ydoc.getMap("achievements");
+  const storedYDoc = localStorage.getItem("sync.ydoc");
+  if (storedYDoc !== null) {
+    const update = Uint8Array.from(atob(storedYDoc), c => c.charCodeAt(0));
+    Y.applyUpdate(ydoc, update);
+  }
+  else {
+    ydoc.transact(() => {
+      yTexts["date"].insert(0, localStorage.getItem("date") || "");
+      yTexts["today"].insert(0, localStorage.getItem("value.today") || "");
+      yTexts["inbox"].insert(0, localStorage.getItem("value.inbox") || "");
+      for (const key of weekdayKeys) {
+        yTexts[`routine.${key}`].insert(0, localStorage.getItem(`routine.${key}`) || "");
+      }
+      if (localStorage.getItem("achievements") !== null) {
+        const achievements = JSON.parse(localStorage.getItem("achievements"));
+        for (const day of achievements) {
+          const yArr = new Y.Array();
+          yArr.push(day.tasks);
+          yAchievements.set(day.date, yArr);
+        }
+      }
+    });
+  }
+  ydoc.on("update", () => {
+    persistYDoc();
+  });
+  ydocReady = true;
+}
+
 async function pushState() {
+  await ensureYjs();
   if (openpgp === undefined) {
     openpgp = await import("./openpgp.min.mjs?sha1=10537e7469a1cffc78969c32fe52216896b36c64");
   }
+  if (!ydocReady) {
+    return;
+  }
   syncVersion++;
   localStorage.setItem("sync.version", syncVersion.toString());
-  const stateJSON = JSON.stringify(createSyncState());
+  const stateUpdate = Y.encodeStateAsUpdate(ydoc);
+  let binaryState = "";
+  for (let i = 0; i < stateUpdate.length; i++) {
+    binaryState += String.fromCharCode(stateUpdate[i]);
+  }
+  const base64State = btoa(binaryState);
+  const envelope = JSON.stringify({ format: "yjs", data: base64State });
   const pgpPublicKeyObj = await openpgp.readKey({
     armoredKey: localStorage.getItem("user.pgpPublicKey")
   });
   const encrypted = await openpgp.encrypt({
-    message: await openpgp.createMessage({ text: stateJSON }),
+    message: await openpgp.createMessage({ text: envelope }),
     encryptionKeys: pgpPublicKeyObj
   });
   try {
@@ -929,6 +1130,7 @@ async function pushState() {
 }
 
 async function pullState() {
+  await ensureYjs();
   if (openpgp === undefined) {
     openpgp = await import("./openpgp.min.mjs?sha1=10537e7469a1cffc78969c32fe52216896b36c64");
   }
@@ -966,10 +1168,22 @@ async function pullState() {
       }),
       decryptionKeys: pgpPrivateKeyObj
     });
-    const state = JSON.parse(decrypted.data);
     syncVersion = result.version;
     localStorage.setItem("sync.version", syncVersion.toString());
-    applySyncState(state);
+    const envelope = JSON.parse(decrypted.data);
+    if (ydocReady && envelope.format === "yjs") {
+      const remoteUpdate = Uint8Array.from(atob(envelope.data), c => c.charCodeAt(0));
+      Y.applyUpdate(ydoc, remoteUpdate);
+      applyYDocToLocalStorage();
+    }
+    else if (ydocReady) {
+      applyLegacyStateToYDoc(envelope);
+      applyYDocToLocalStorage();
+    }
+    else {
+      applySyncState(envelope);
+    }
+    refreshView();
     setNotifyStatus();
   }
 }
@@ -1105,6 +1319,7 @@ function reportServiceFailure() {
 async function startApp() {
   setSnap();
   setExportAndSave();
+  await initYDoc();
   if (attr("save") == "service") {
     await tryLocalPair();
   }
@@ -1441,6 +1656,17 @@ async function startApp() {
       syncVersion = 0;
       dom.fetchConnected.classList.remove("display");
     }
+    ydocBatching = true;
+    syncTextToYDoc("value.today", localStorage.getItem("value.today") || "");
+    syncTextToYDoc("value.inbox", localStorage.getItem("value.inbox") || "");
+    for (const key of weekdayKeys) {
+      syncTextToYDoc(`routine.${key}`, localStorage.getItem(`routine.${key}`) || "");
+    }
+    if (localStorage.getItem("achievements") !== null) {
+      syncAchievementsToYDoc(localStorage.getItem("achievements"));
+    }
+    ydocBatching = false;
+    persistYDoc();
     setNotifyStatus();
     refreshView();
     requestSave();
@@ -1547,6 +1773,12 @@ let timeoutSync = 0;
 let lastSync = 0;
 let syncVersion = parseInt(localStorage.getItem("sync.version") || "0");
 let openpgp;
+let Y;
+let ydoc;
+let yTexts = {};
+let yAchievements;
+let ydocReady = false;
+let ydocBatching = false;
 const platformApple = (
   navigator.platform.startsWith("Mac")
   || navigator.platform == "iPad"
