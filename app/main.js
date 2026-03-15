@@ -857,7 +857,7 @@ function requestSave() {
     timeoutSave.id = window.setTimeout(saveToFile, 1500);
     timeoutSave.waiting = true;
   }
-  if (localStorage.getItem("user.userID") !== null && attr("save") !== "service") {
+  if (localStorage.getItem("user.userID") !== null) {
     window.clearTimeout(timeoutSync);
     timeoutSync = window.setTimeout(pushState, 3000);
   }
