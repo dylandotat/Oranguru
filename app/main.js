@@ -792,6 +792,25 @@ function setExportAndSave() {
   }
 }
 
+function setSyncButtons() {
+  if (localStorage.getItem("user.userID") === null) {
+    return;
+  }
+  dom.syncMenuSpacer.classList.add("display");
+  dom.syncSave.classList.add("display");
+  dom.syncLoad.classList.add("display");
+  dom.syncSave.addEventListener("click", async event => {
+    event.preventDefault();
+    dom.menu.classList.remove("display");
+    await pushState();
+  });
+  dom.syncLoad.addEventListener("click", async event => {
+    event.preventDefault();
+    dom.menu.classList.remove("display");
+    await pullState();
+  });
+}
+
 function createData() {
   let appBase = window.location.href;
   if (!appBase.endsWith("/")) {
@@ -1319,6 +1338,7 @@ function reportServiceFailure() {
 async function startApp() {
   setSnap();
   setExportAndSave();
+  setSyncButtons();
   await initYDoc();
   if (attr("save") == "service") {
     await tryLocalPair();
@@ -1746,6 +1766,9 @@ const dom = {
   snapToCenter: document.getElementById("snap-to-center"),
   exportData: document.getElementById("export-data"),
   enableSave: document.getElementById("enable-save"),
+  syncMenuSpacer: document.getElementById("sync-menu-spacer"),
+  syncSave: document.getElementById("sync-save"),
+  syncLoad: document.getElementById("sync-load"),
   popupSavePaused: document.getElementById("popup-save-paused"),
   popupSaveFailed: document.getElementById("popup-save-failed")
 };
