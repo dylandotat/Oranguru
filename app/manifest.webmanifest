@@ -1,4 +1,11 @@
 {
+    "name": "Frogtab",
+    "short_name": "Frogtab",
+    "description": "A lightweight task manager that helps you stay focused on today's priorities",
+    "start_url": "/",
+    "display": "standalone",
+    "background_color": "#f3f3f3",
+    "theme_color": "#f3f3f3",
     "icons": [
         {
             "src": "/favicons/icon-192.png",

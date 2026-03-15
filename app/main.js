@@ -1811,3 +1811,7 @@ const platformApple = (
   || navigator.platform == "iPhone"
 );
 startApp();
+
+if ("serviceWorker" in navigator) {
+  navigator.serviceWorker.register("/sw.js");
+}
