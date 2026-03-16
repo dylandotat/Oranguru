@@ -183,12 +183,26 @@
         If you enable the Future Tab feature, Oranguru adds a <strong>Future</strong> tab where you can write down tasks that you'd like to work on at a later date.
         At the beginning of each day, Oranguru checks the Future tab and moves any due tasks to Today.
       </p>
-      <p>
-        To enable the Future Tab, click
-        <svg role="img" aria-label="Menu icon" width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M3 5h18M3 12h18M3 19h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
-        at the bottom of Oranguru, then click <strong>Enable Future Tab</strong>.
-        To disable it, click <strong>Disable Future Tab</strong> from the same menu.
-      </p>
+      <div tabindex="-1" id="future-disabled" class="notice display">
+        <div class="display">
+          <p>
+            You have not enabled the Future Tab.
+          </p>
+          <div>
+            <button tabindex="0" id="enable-future">Enable Future Tab</button>
+          </div>
+        </div>
+      </div>
+      <div tabindex="-1" id="future-enabled" class="notice">
+        <div class="display">
+          <p>
+            You have enabled the Future Tab.
+          </p>
+          <p>
+            <a tabindex="0" id="disable-future" href="#">Disable Future Tab</a>
+          </p>
+        </div>
+      </div>
       <p>
         Oranguru supports two scheduling formats:
       </p>
@@ -1114,6 +1128,17 @@
         dom.restoreDate.textContent = backupDate;
       }
 
+      function setFuture() {
+        if (localStorage.getItem("ui.future") == "enabled") {
+          dom.futureDisabled.classList.remove("display");
+          dom.futureEnabled.classList.add("display");
+        }
+        else {
+          dom.futureDisabled.classList.add("display");
+          dom.futureEnabled.classList.remove("display");
+        }
+      }
+
       function setAchievements() {
         if (localStorage.getItem("achievements") !== null) {
           dom.achievementsDisabled.classList.remove("display");
@@ -1495,6 +1520,18 @@
           dom.beforeRestore.classList.add("display");
           dom.beforeRestore.focus();
         });
+        setFuture();
+        dom.enableFuture.addEventListener("click", () => {
+          localStorage.setItem("ui.future", "enabled");
+          setFuture();
+          dom.futureEnabled.focus();
+        });
+        dom.disableFuture.addEventListener("click", event => {
+          event.preventDefault();
+          localStorage.removeItem("ui.future");
+          setFuture();
+          dom.futureDisabled.focus();
+        });
         dom.enableAchievements.addEventListener("click", () => {
           localStorage.setItem("achievements", "[]");
           setAchievements();
@@ -1528,6 +1565,7 @@
         window.addEventListener("storage", () => {
           document.documentElement.setAttribute("data-theme", localStorage.getItem("ui.theme"));
           updateSelectedTheme();
+          setFuture();
           setAchievements();
           checkForLocalUnpaired();
           if (
@@ -1576,6 +1614,10 @@
         stagedRestore: document.getElementById("staged-restore"),
         restoreDate: document.getElementById("restore-date"),
         cancelRestore: document.getElementById("cancel-restore"),
+        futureDisabled: document.getElementById("future-disabled"),
+        enableFuture: document.getElementById("enable-future"),
+        futureEnabled: document.getElementById("future-enabled"),
+        disableFuture: document.getElementById("disable-future"),
         achievementsDisabled: document.getElementById("achievements-disabled"),
         enableAchievements: document.getElementById("enable-achievements"),
         achievementsEnabled: document.getElementById("achievements-enabled"),

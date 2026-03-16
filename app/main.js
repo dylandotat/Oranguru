@@ -802,30 +802,7 @@ function setFuture() {
   if (localStorage.getItem("ui.future") == "enabled") {
     dom.tabFuture.classList.add("display");
     dom.editor.future.classList.add("display");
-    dom.disableFuture.classList.add("display");
-    dom.enableFuture.classList.remove("display");
   }
-  dom.enableFuture.addEventListener("click", event => {
-    event.preventDefault();
-    localStorage.setItem("ui.future", "enabled");
-    dom.tabFuture.classList.add("display");
-    dom.editor.future.classList.add("display");
-    dom.disableFuture.classList.add("display");
-    dom.enableFuture.classList.remove("display");
-    dom.menu.classList.remove("display");
-  });
-  dom.disableFuture.addEventListener("click", event => {
-    event.preventDefault();
-    localStorage.removeItem("ui.future");
-    dom.tabFuture.classList.remove("display");
-    dom.editor.future.classList.remove("display");
-    dom.enableFuture.classList.add("display");
-    dom.disableFuture.classList.remove("display");
-    if (selectedTab == "future") {
-      switchToTab("today");
-    }
-    dom.menu.classList.remove("display");
-  });
 }
 
 function setExportAndSave() {
@@ -1668,6 +1645,21 @@ async function startApp() {
       dom.menuButton.focus();
     }
   });
+  window.addEventListener("storage", event => {
+    if (event.key === "ui.future") {
+      if (localStorage.getItem("ui.future") == "enabled") {
+        dom.tabFuture.classList.add("display");
+        dom.editor.future.classList.add("display");
+      }
+      else {
+        dom.tabFuture.classList.remove("display");
+        dom.editor.future.classList.remove("display");
+        if (selectedTab == "future") {
+          switchToTab("today");
+        }
+      }
+    }
+  });
   document.addEventListener("visibilitychange", () => {
     if (document.hidden) {
       lastActive = Date.now();
@@ -1918,8 +1910,6 @@ const dom = {
   today: document.getElementById("tab-today"),
   inbox: document.getElementById("tab-inbox"),
   tabFuture: document.getElementById("tab-future"),
-  enableFuture: document.getElementById("enable-future"),
-  disableFuture: document.getElementById("disable-future"),
   info: document.getElementById("tab-info"),
   fetchConnected: document.getElementById("fetch-connected"),
   menuButton: document.getElementById("menu-button"),
