@@ -38,6 +38,7 @@
           <li><a tabindex="0" href="#adding-tasks-to-your-inbox">Adding tasks to your inbox</a></li>
           <li><a tabindex="0" href="#triaging-your-inbox">Triaging your inbox</a></li>
           <li><a tabindex="0" href="#setting-up-recurring-tasks">Setting up recurring tasks</a></li>
+          <li><a tabindex="0" href="#scheduling-future-tasks">Scheduling future tasks</a></li>
           <li><a tabindex="0" href="#tracking-your-completed-tasks">Tracking your completed tasks</a></li>
           <li><a tabindex="0" href="#registering-for-a-personal-link">Registering for a personal link</a></li>
         </ul>
@@ -87,6 +88,7 @@
         <li>Moves any remaining tasks from Today to your inbox</li>
         <li>Unsnoozes any snoozed tasks in your inbox</li>
         <li>Adds tasks from your <a tabindex="0" href="#setting-up-recurring-tasks">weekly routine</a> to your inbox</li>
+        <li>Moves any due tasks from the <a tabindex="0" href="#scheduling-future-tasks">Future tab</a> to Today</li>
       </ul>
       <p>
         You can then triage your inbox and decide what you'd like to accomplish today.
@@ -176,6 +178,61 @@
       <p>
         After you've finished writing down your recurring tasks, close the tab.
       </p>
+      <h2 id="scheduling-future-tasks">Scheduling future tasks</h2>
+      <p>
+        If you enable the Future Tab feature, Oranguru adds a <strong>Future</strong> tab where you can write down tasks that you'd like to work on at a later date.
+        At the beginning of each day, Oranguru checks the Future tab and moves any due tasks to Today.
+      </p>
+      <p>
+        To enable the Future Tab, click
+        <svg role="img" aria-label="Menu icon" width="20px" height="20px" stroke-width="1.5" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" color="currentColor"><path d="M3 5h18M3 12h18M3 19h18" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+        at the bottom of Oranguru, then click <strong>Enable Future Tab</strong>.
+        To disable it, click <strong>Disable Future Tab</strong> from the same menu.
+      </p>
+      <p>
+        Oranguru supports two scheduling formats:
+      </p>
+      <table>
+        <thead>
+          <tr>
+            <th style="width: 50%">Format</th>
+            <th style="width: 50%">Example</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>
+              <p>
+                <code>+<em>n</em> task</code>, where <em>n</em> is a number
+              </p>
+              <p>
+                Moves the task to Today after <em>n</em>&nbsp;days.
+                Each day, the number decreases by 1.
+              </p>
+            </td>
+            <td>
+              <p>
+                <code>+4 Do some work</code> will appear in Today in 4&nbsp;days.
+              </p>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p>
+                <code><em>YYYY</em>.<em>M</em>.<em>D</em> task</code>
+              </p>
+              <p>
+                Moves the task to Today on or after the specified date.
+              </p>
+            </td>
+            <td>
+              <p>
+                <code>2026.5.3 Do some work</code> will appear in Today on May&nbsp;3,&nbsp;2026.
+              </p>
+            </td>
+          </tr>
+        </tbody>
+      </table>
       <h2 id="tracking-your-completed-tasks">Tracking your completed tasks</h2>
       <p>
         If you enable the Achievements feature, Oranguru can record your completed tasks.
@@ -397,7 +454,7 @@
         Oranguru stores the following data that you create:
       </p>
       <ul class="compact">
-        <li>The contents of Today and Inbox</li>
+        <li>The contents of Today, Inbox, and Future (if enabled)</li>
         <li>Recurring tasks from your weekly routine</li>
         <li>Your completed tasks (part of the <a tabindex="0" href="#tracking-your-completed-tasks" title="Tracking your completed tasks">Achievements</a> feature)</li>
       </ul>
@@ -542,6 +599,20 @@
             <td>
               <span class="shortcut mac display"><kbd>⌘</kbd> + <kbd>I</kbd></span>
               <span class="shortcut win-linux"><kbd>Ctrl</kbd> + <kbd>I</kbd></span>
+            </td>
+          </tr>
+          <tr>
+            <td>
+              <p>
+                Show Future
+              </p>
+              <p>
+                Part of the <a tabindex="0" href="#scheduling-future-tasks" title="Scheduling future tasks">Future Tab</a> feature.
+              </p>
+            </td>
+            <td>
+              <span class="shortcut mac display"><kbd>⌘</kbd> + <kbd>F</kbd></span>
+              <span class="shortcut win-linux"><kbd>Ctrl</kbd> + <kbd>F</kbd></span>
             </td>
           </tr>
           <tr>
