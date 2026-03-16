@@ -1,11 +1,11 @@
 services:
-  frogtab:
+  oranguru:
     build: .
     ports:
       - "80:80"
     volumes:
-      - frogtab-data:/data
+      - oranguru-data:/data
     restart: unless-stopped
 
 volumes:
-  frogtab-data:
+  oranguru-data:

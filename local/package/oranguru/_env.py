@@ -9,10 +9,10 @@ from ._exceptions import ReadError, WriteError
 
 
 def config_path() -> Path:
-    if os.getenv("FROGTAB_CONFIG_FILE"):
-        config_path = Path(os.getenv("FROGTAB_CONFIG_FILE"))
+    if os.getenv("ORANGURU_CONFIG_FILE"):
+        config_path = Path(os.getenv("ORANGURU_CONFIG_FILE"))
     else:
-        config_path = Path("Frogtab_config.json")
+        config_path = Path("Oranguru_config.json")
     if config_path.is_dir():
         print(f"{error()} '{config_path.absolute()}' is a directory")
         sys.exit(1)
@@ -28,7 +28,7 @@ def try_migrate_legacy_config(target_config_path: Path) -> None:
     shutil.copytree(Path(__file__).parent / "legacy", "migrated")
     shutil.move("config.py", "migrated")
     # Read config.py and create a JSON file
-    config_path = Path("migrated") / "Frogtab_config.json"
+    config_path = Path("migrated") / "Oranguru_config.json"
     subprocess.run(
         [sys.executable, Path("migrated") / "migrate_config.py", config_path],
         capture_output=True,
@@ -42,7 +42,7 @@ def try_migrate_legacy_config(target_config_path: Path) -> None:
 def tick() -> str:
     display_tick = "✓"
     if use_color():
-        return f"\033[32m{display_tick}\033[0m"  # Make it green
+        return f"\033[38;5;208m{display_tick}\033[0m"  # Make it orange
     else:
         return display_tick
 
@@ -93,9 +93,9 @@ def task_or_exit() -> str:
 
 
 def check_ports_file() -> None:
-    if not os.getenv("FROGTAB_PORTS_FILE"):
+    if not os.getenv("ORANGURU_PORTS_FILE"):
         return
-    ports_path = Path(os.getenv("FROGTAB_PORTS_FILE"))
+    ports_path = Path(os.getenv("ORANGURU_PORTS_FILE"))
     if ports_path.is_dir():
         print(f"{error()} '{ports_path.absolute()}' is a directory")
         sys.exit(1)
@@ -104,9 +104,9 @@ def check_ports_file() -> None:
 
 
 def log_running(port: int) -> None:
-    if not os.getenv("FROGTAB_PORTS_FILE"):
+    if not os.getenv("ORANGURU_PORTS_FILE"):
         return
-    ports_path = Path(os.getenv("FROGTAB_PORTS_FILE"))
+    ports_path = Path(os.getenv("ORANGURU_PORTS_FILE"))
     ports = read_ports(ports_path)
     ports.add(str(port))
     try:
@@ -116,9 +116,9 @@ def log_running(port: int) -> None:
 
 
 def log_not_running(port: int) -> None:
-    if not os.getenv("FROGTAB_PORTS_FILE"):
+    if not os.getenv("ORANGURU_PORTS_FILE"):
         return
-    ports_path = Path(os.getenv("FROGTAB_PORTS_FILE"))
+    ports_path = Path(os.getenv("ORANGURU_PORTS_FILE"))
     ports = read_ports(ports_path)
     if str(port) in ports:
         ports.remove(str(port))

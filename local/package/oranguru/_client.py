@@ -88,8 +88,8 @@ def _read_config(config_path: Path) -> dict:
         config = {
             "port": 5000,
             "expose": False,
-            "backupFile": "Frogtab_backup.json",
-            "registrationServer": "https://frogtab.com/",
+            "backupFile": "Oranguru_backup.json",
+            "registrationServer": "https://oranguru.com/",
             "internalState": {"pairingKey": "", "messages": []},
         }
         _write_json(config, config_path)
@@ -129,7 +129,7 @@ def start(config_path: Path) -> bool:
     # Run the server as a separate process
     # (raises TypeError if config_path doesn't implement __fspath__)
     subprocess.Popen(
-        ["serve-frogtab", config_path],
+        ["serve-oranguru", config_path],
         stdout=subprocess.DEVNULL,
         stderr=subprocess.DEVNULL,
     )
@@ -143,7 +143,7 @@ def get_running_version(port: int) -> str:
         response = requests.get(f"http://localhost:{port}/service/get-version")
     except requests.exceptions.ConnectionError:
         raise NotRunningError(port)
-    if "X-Frogtab-Local" not in response.headers:
+    if "X-Oranguru-Local" not in response.headers:
         raise WrongAppError(port)
     if response.status_code != 200:
         raise RuntimeError(f"no version (port {port})")
@@ -167,21 +167,21 @@ def stop(port: int) -> bool:
         response = requests.post(f"http://localhost:{port}/service/post-stop")
     except requests.exceptions.ConnectionError:
         return False
-    if "X-Frogtab-Local" not in response.headers:
+    if "X-Oranguru-Local" not in response.headers:
         raise WrongAppError(port)
     _wait_for_no_connection(port)
     return True
 
 
 def send(port: int, task: str) -> None:
-    """Send a task to Frogtab."""
+    """Send a task to Oranguru."""
     try:
         response = requests.post(
             f"http://localhost:{port}/service/post-add-message", json={"message": task}
         )
     except requests.exceptions.ConnectionError:
         raise NotRunningError(port)
-    if "X-Frogtab-Local" not in response.headers:
+    if "X-Oranguru-Local" not in response.headers:
         raise WrongAppError(port)
 
 

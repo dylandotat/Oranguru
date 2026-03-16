@@ -1,18 +1,18 @@
 // ******** Shared helpers ********
 
-class FrogtabDate {
+class OranguruDate {
   constructor(date = null) {
     if (date === null) {
-      date = FrogtabDate.stringFromObject(new Date()); // today as YYYY-MM-DD
+      date = OranguruDate.stringFromObject(new Date()); // today as YYYY-MM-DD
     }
     else if (date instanceof Date) {
-      date = FrogtabDate.stringFromObject(date); // date as YYYY-MM-DD
+      date = OranguruDate.stringFromObject(date); // date as YYYY-MM-DD
     }
     if (typeof date == "string") {
       const match = date.match(/^(\d{4})-(\d{2})-(\d{2})$/);
       if (match === null) {
         this.object = new Date(date); // 00:00:00 in local timezone
-        this.string = FrogtabDate.stringFromObject(this.object);
+        this.string = OranguruDate.stringFromObject(this.object);
         return;
       }
       this.object = new Date(   // 00:00:00 in local timezone
@@ -27,7 +27,7 @@ class FrogtabDate {
   }
   addDays(n) {
     this.object.setTime(this.object.getTime() + (n * 86400000));
-    this.string = FrogtabDate.stringFromObject(this.object);
+    this.string = OranguruDate.stringFromObject(this.object);
   }
   getWeekdayIndex() {
     return this.object.getDay();
@@ -51,10 +51,10 @@ class FrogtabDate {
 
 function prepareLocalStorageDates() {
   if (localStorage.getItem("date") === null) {
-    localStorage.setItem("date", (new FrogtabDate()).string);
+    localStorage.setItem("date", (new OranguruDate()).string);
     return;
   }
-  const date = new FrogtabDate(localStorage.getItem("date"));
+  const date = new OranguruDate(localStorage.getItem("date"));
   if (localStorage.getItem("date") == date.string) {
     return;
   }
@@ -65,7 +65,7 @@ function prepareLocalStorageDates() {
   }
   const achievements = JSON.parse(localStorage.getItem("achievements"));
   for (const day of achievements) {
-    day.date = (new FrogtabDate(day.date)).string;
+    day.date = (new OranguruDate(day.date)).string;
   }
   localStorage.setItem("achievements", JSON.stringify(achievements));
 }
@@ -628,11 +628,11 @@ function updateCompleted(lines, offset) {
   if (offset.startsWith("-")) {
     offsetDays = parseInt(offset);
   } else if (offset != "") {
-    const weekdayToday = (new FrogtabDate()).getWeekdayIndex();
+    const weekdayToday = (new OranguruDate()).getWeekdayIndex();
     const weekdayKeysRotated = weekdayKeys.slice(weekdayToday + 1).concat(weekdayKeys.slice(0, weekdayToday + 1));
     offsetDays = weekdayKeysRotated.indexOf(offset) - 6;
   }
-  const dateCompleted = new FrogtabDate();
+  const dateCompleted = new OranguruDate();
   dateCompleted.addDays(offsetDays);
   const achievements = JSON.parse(localStorage.getItem("achievements"));
   let testIndex;
@@ -642,7 +642,7 @@ function updateCompleted(lines, offset) {
       storeThenSave("achievements", JSON.stringify(achievements));
       return;
     }
-    const testTime = (new FrogtabDate(achievements[testIndex].date)).object.getTime();
+    const testTime = (new OranguruDate(achievements[testIndex].date)).object.getTime();
     if (testTime < dateCompleted.object.getTime()) {
       break;
     }
@@ -655,7 +655,7 @@ function updateCompleted(lines, offset) {
 }
 
 function updateValues() {
-  const weekdayToday = (new FrogtabDate()).getWeekdayIndex();
+  const weekdayToday = (new OranguruDate()).getWeekdayIndex();
   const key = weekdayKeys[weekdayToday];
   const routine = localStorage.getItem(`routine.${key}`);
   const storedTodayValue = unsnoozeEverything(localStorage.getItem("value.today"));
@@ -670,7 +670,7 @@ function updateValues() {
 }
 
 function isNewDay() {
-  const dateToday = (new FrogtabDate()).string;
+  const dateToday = (new OranguruDate()).string;
   if (localStorage.getItem("date") == dateToday) {
     return false;
   }
@@ -772,7 +772,7 @@ function setExportAndSave() {
       event.preventDefault();
       try {
         fileHandle = await window.showSaveFilePicker({
-          suggestedName: `Frogtab_backup.json`,
+          suggestedName: `Oranguru_backup.json`,
           types: [{
             description: "JSON files",
             accept: {
@@ -1689,7 +1689,7 @@ async function startApp() {
       if (verifiedUser) {
         // Since the user has probably just sent a test message,
         // we'll set the last message fetch to be 8 minutes ago.
-        // Then Frogtab will do another message fetch in 2 minutes.
+        // Then Oranguru will do another message fetch in 2 minutes.
         lastAppend -= 480000;
         syncVersion = parseInt(localStorage.getItem("sync.version") || "0");
         await pullState();
@@ -1750,7 +1750,7 @@ if (localStorage.getItem("restore") !== null) {
 }
 prepareLocalStorageDates();
 if (localStorage.getItem("value.today") === null) {
-  // This is the user's first time opening Frogtab
+  // This is the user's first time opening Oranguru
   localStorage.setItem("value.today", "");
   showWelcome = true;
 }

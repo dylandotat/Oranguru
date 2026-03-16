@@ -10,7 +10,7 @@ package: app licenses ruff _package-stage _package-build
   @echo "  $ cd local"
   @echo "  $ . .venv/bin/activate"
   @echo "  $ cd testing"
-  @echo "  $ frogtab ..."
+  @echo "  $ oranguru ..."
 
 [working-directory: "local"]
 _package-build:
@@ -20,23 +20,23 @@ _package-build:
   . .venv/bin/activate
   cd package
   rm -rf dist
-  rm -rf frogtab.egg-info
+  rm -rf oranguru.egg-info
   pip install build
   python -m build
-  pip install dist/frogtab-*.whl
+  pip install dist/oranguru-*.whl
 
-[working-directory: "local/package/frogtab/local_server/templates"]
+[working-directory: "local/package/oranguru/local_server/templates"]
 _package-stage: _package-static _package-templates-empty
   mv ../static/index.html ../static/icon-*.html ../static/help.html .
-  sed -i'.backup' 's/data-server-base=\"https:\/\/frogtab\.com\/\"/data-server-base=\"{{{{ server_base }}\"/' index.html icon-*.html help.html
+  sed -i'.backup' 's/data-server-base=\"https:\/\/oranguru\.com\/\"/data-server-base=\"{{{{ server_base }}\"/' index.html icon-*.html help.html
   sed -i'.backup' 's/data-save=\"browser\"/data-save=\"service\"/' index.html icon-*.html help.html
   rm *.backup
 
 _package-static:
-  rm -rf local/package/frogtab/local_server/static
-  cp -r app local/package/frogtab/local_server/static
+  rm -rf local/package/oranguru/local_server/static
+  cp -r app local/package/oranguru/local_server/static
 
-[working-directory: "local/package/frogtab/local_server"]
+[working-directory: "local/package/oranguru/local_server"]
 _package-templates-empty:
   rm -rf templates
   mkdir templates
@@ -57,7 +57,7 @@ snap:
 # 4️⃣  Upload a snap to the candidate channel
 [working-directory: "local/snapcraft"]
 snap-upload version:
-  snapcraft upload --release=candidate frogtab_{{version}}_amd64.snap
+  snapcraft upload --release=candidate oranguru_{{version}}_amd64.snap
 
 # Check and format code
 [working-directory: "local"]

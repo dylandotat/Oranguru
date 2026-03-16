@@ -1,4 +1,4 @@
-# Hacking Frogtab
+# Hacking Oranguru
 
 ## Customizing the placeholder text of your personal link
 
@@ -16,8 +16,8 @@ let encryptAndSend = null;
 async function send(task) {
   try {
     if (!encryptAndSend) {
-      const frogtab = await import("https://frogtab.com/open/sdk.js");
-      encryptAndSend = await frogtab.connectToInbox("YOUR_ID");
+      const oranguru = await import("https://oranguru.com/open/sdk.js");
+      encryptAndSend = await oranguru.connectToInbox("YOUR_ID");
     }
     return await encryptAndSend(task);
   }
@@ -40,13 +40,13 @@ For a detailed example, see [Adding a private feedback box to Bear](https://mayb
  1. Download your public key:
 
     ```
-    curl https://frogtab.com/key_YOUR_ID.asc > frogtab.asc
+    curl https://oranguru.com/key_YOUR_ID.asc > oranguru.asc
     ```
 
  2. Import your public key into GnuPG and change the trust level of the key:
 
     ```
-    gpg --import frogtab.asc
+    gpg --import oranguru.asc
     gpg --edit-key "KEY_ID"
     gpg> trust
     gpg> 5
@@ -69,7 +69,7 @@ For a detailed example, see [Adding a private feedback box to Bear](https://mayb
       exit 1
     fi
 
-    POST_URL=https://frogtab.com/open/post-add-message
+    POST_URL=https://oranguru.com/open/post-add-message
     POST_TYPE="Content-Type: application/json"
     POST_BODY="$(jq -n --arg p1 "$ID" --arg p2 "$ENCRYPTED_TASK" '{user_id: $p1, message: $p2}')"
     curl -s -X POST -H "$POST_TYPE" -d "$POST_BODY" "$POST_URL" | jq -e '.success == true' > /dev/null
@@ -81,4 +81,4 @@ For a detailed example, see [Adding a private feedback box to Bear](https://mayb
 
 Replace `YOUR_ID` by the ID from your personal link.
 
-For a detailed explanation, see [Making a command-line tool for your Frogtab personal link](https://maybecoding.bearblog.dev/making-a-command-line-tool-for-your-frogtab-personal-link/).
+For a detailed explanation, see [Making a command-line tool for your Oranguru personal link](https://maybecoding.bearblog.dev/making-a-command-line-tool-for-your-oranguru-personal-link/).

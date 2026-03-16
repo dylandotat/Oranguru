@@ -1,4 +1,4 @@
-# Before version 2.0.0, Frogtab Local imported config from config.py in the working dir.
+# Before version 2.0.0, Oranguru Local imported config from config.py in the working dir.
 #
 # config.py defines:
 #   - local_port
@@ -7,15 +7,15 @@
 #
 # This script tries to import the config values from config.py and create a JSON file.
 #
-# config.py expects to import helpers from frogtab_helpers:
+# config.py expects to import helpers from oranguru_helpers:
 #   - working_dir
 #   - write_json()
 #   - @backup()
 #
-# We've mocked frogtab_helpers.py so that write_json() captures backup_file.
+# We've mocked oranguru_helpers.py so that write_json() captures backup_file.
 #
 # For an example of config.py, see:
-# https://raw.githubusercontent.com/dwilding/frogtab/f5f2d5436440d9e6eb4af4aadfd7273a95b5cadc/local/config.py
+# https://raw.githubusercontent.com/dwilding/oranguru/f5f2d5436440d9e6eb4af4aadfd7273a95b5cadc/local/config.py
 
 from pathlib import Path
 import sys
@@ -26,8 +26,8 @@ config_path = Path(args[0])
 config_dict = {
     "port": 5000,
     "expose": False,
-    "backupFile": "Frogtab_backup.json",
-    "registrationServer": "https://frogtab.com/",
+    "backupFile": "Oranguru_backup.json",
+    "registrationServer": "https://oranguru.com/",
     "internalState": {"pairingKey": "", "messages": []},
 }
 try:

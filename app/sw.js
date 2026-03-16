@@ -1,4 +1,4 @@
-const CACHE_VERSION = "frogtab-v1";
+const CACHE_VERSION = "oranguru-v1";
 
 const PRECACHE_URLS = [
   "/",

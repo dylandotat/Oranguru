@@ -11,8 +11,8 @@ let encryptAndSend = null;
 async function send(task) {
   try {
     if (!encryptAndSend) {
-      const frogtab = await import("https://frogtab.com/open/sdk.js");
-      encryptAndSend = await frogtab.connectToInbox("YOUR_ID");
+      const oranguru = await import("https://oranguru.com/open/sdk.js");
+      encryptAndSend = await oranguru.connectToInbox("YOUR_ID");
     }
     return await encryptAndSend(task);
   }
@@ -30,8 +30,8 @@ To get the ID of your public key:
 
 ```javascript
 async function getKeyID(userID) {
-  const frogtab = await import("https://frogtab.com/open/sdk.js");
-  userDetails = await frogtab.getUserDetails(userID);
+  const oranguru = await import("https://oranguru.com/open/sdk.js");
+  userDetails = await oranguru.getUserDetails(userID);
   return userDetails.pgpPublicKeyID;
 }
 

@@ -2,15 +2,15 @@
 
 set -e
 
-extra="https://raw.githubusercontent.com/dwilding/frogtab/refs/heads/main/extra"
+extra="https://raw.githubusercontent.com/dwilding/oranguru/refs/heads/main/extra"
 
 cd /home/protected
-wget -O install_frogtab.sh "$extra/install_frogtab.sh"
-chmod +x install_frogtab.sh
-./install_frogtab.sh /home/public --overwrite
+wget -O install_oranguru.sh "$extra/install_oranguru.sh"
+chmod +x install_oranguru.sh
+./install_oranguru.sh /home/public --overwrite
 
 cd /home/public
-wget -O install_frogtab.sh "$extra/install_frogtab.sh"
+wget -O install_oranguru.sh "$extra/install_oranguru.sh"
 wget -O sitemap.xml "$extra/sitemap.xml"
 wget -qO- "$extra/extra.htaccess" >> .htaccess
 sed -i'.backup' 's/data-registration=\"short\"/data-registration=\"long\"/' help.html

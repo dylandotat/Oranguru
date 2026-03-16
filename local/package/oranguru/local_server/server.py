@@ -35,7 +35,7 @@ def write_json(data: dict, json_path: Path) -> None:
 
 args = sys.argv[1:]
 if len(args) != 1:
-    print("Usage: serve-frogtab /path/to/config.json")
+    print("Usage: serve-oranguru /path/to/config.json")
     sys.exit(2)
 config_path = Path(args[0])
 config = read_json(config_path)
@@ -143,12 +143,12 @@ def post_stop():
     return flask.make_response("", 204)
 
 
-# Add a custom response header to identify Frogtab Local
+# Add a custom response header to identify Oranguru Local
 
 
 @app.after_request
 def add_custom_header(response):
-    response.headers["X-Frogtab-Local"] = VERSION
+    response.headers["X-Oranguru-Local"] = VERSION
     return response
 
 

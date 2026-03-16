@@ -7,8 +7,8 @@ RUN a2enmod rewrite headers && apt-get update && apt-get install -y unzip && rm 
 RUN curl -sS https://getcomposer.org/installer | php -- --install-dir=/usr/local/bin --filename=composer
 
 # Install PHP dependencies
-COPY server/packages /srv/frogtab-packages
-WORKDIR /srv/frogtab-packages
+COPY server/packages /srv/oranguru-packages
+WORKDIR /srv/oranguru-packages
 RUN composer install --no-dev --optimize-autoloader
 
 # Copy app files into web root
@@ -29,11 +29,11 @@ RUN echo '\
 <Directory /var/www/html>\n\
     AllowOverride All\n\
 </Directory>\n\
-SetEnv DIR_PACKAGES "/srv/frogtab-packages"\n\
-SetEnv FILE_SQLITEDB "/data/frogtab.db"\n\
+SetEnv DIR_PACKAGES "/srv/oranguru-packages"\n\
+SetEnv FILE_SQLITEDB "/data/oranguru.db"\n\
 SetEnv FILE_SETTINGS "/data/settings.toml"\n\
-AddType text/javascript .mjs\n' > /etc/apache2/conf-available/frogtab.conf \
-    && a2enconf frogtab
+AddType text/javascript .mjs\n' > /etc/apache2/conf-available/oranguru.conf \
+    && a2enconf oranguru
 
 # Generate the root .htaccess for URL rewriting
 RUN echo '\
@@ -45,7 +45,7 @@ RewriteCond %{REQUEST_FILENAME}.html -f\n\
 RewriteRule ^([^\\.]+)$ $1.html [L]\n' > /var/www/html/.htaccess
 
 # Patch HTML files for self-hosted mode
-RUN sed -i 's/data-server-base="https:\/\/frogtab\.com\/"/data-server-base=""/' \
+RUN sed -i 's/data-server-base="https:\/\/oranguru\.com\/"/data-server-base=""/' \
         /var/www/html/index.html \
         /var/www/html/icon-normal.html \
         /var/www/html/icon-notify.html \

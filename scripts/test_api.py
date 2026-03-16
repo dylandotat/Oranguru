@@ -4,7 +4,7 @@ import requests
 import argparse
 
 parser = argparse.ArgumentParser(description='Checks whether the registration server responds correctly to API calls')
-parser.add_argument('server', nargs='?', default='https://frogtab.com/', help='URL of the registration server')
+parser.add_argument('server', nargs='?', default='https://oranguru.com/', help='URL of the registration server')
 args = parser.parse_args()
 server_base = args.server
 
@@ -46,7 +46,7 @@ nQ63YgNib+ELXl44Hu8tEjYY65R3sBk8lCv67eY6UQKP
 =9WlR
 -----END PGP MESSAGE-----
 '''
-if server_base == 'https://frogtab.com/':
+if server_base == 'https://oranguru.com/':
     registration_data = success_body(requests.post(f'{server_base}open/post-create-user', json={
         'pgp_public_key': PGP_PUBLIC_KEY,
         'comment': ENCRYPTED_COMMENT

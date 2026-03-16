@@ -2,7 +2,7 @@
 .venv
 testing
 package/dist
-package/frogtab.egg-info
-package/frogtab/local_server/static
-package/frogtab/local_server/templates
+package/oranguru.egg-info
+package/oranguru/local_server/static
+package/oranguru/local_server/templates
 snapcraft/*.snap
