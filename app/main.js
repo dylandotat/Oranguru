@@ -1083,7 +1083,10 @@ async function initYDoc() {
   }
   else {
     ydoc.transact(() => {
-      yTexts["date"].insert(0, localStorage.getItem("date") || "");
+      // Don't insert "date" here: if this device will sync via pullState(), the server's
+      // date will be merged in cleanly. Pre-seeding date causes CRDT duplication
+      // (e.g. "2026-03-162026-03-16") when the server also has today's date, which makes
+      // isNewDay() return true and incorrectly move Today items into the Inbox.
       yTexts["today"].insert(0, localStorage.getItem("value.today") || "");
       yTexts["inbox"].insert(0, localStorage.getItem("value.inbox") || "");
       for (const key of weekdayKeys) {
