@@ -287,3 +287,21 @@ textarea.display {
   outline: 2px solid var(--highlight);
   outline-offset: 1px;
 }
+a.complete-task-button.display {
+  padding: 0.35rem 0.7rem;
+  border-radius: 6px;
+  background-color: var(--highlight);
+  color: var(--text-on-highlight);
+  font-weight: bold;
+  min-height: 44px;
+  line-height: 44px;
+}
+a.complete-task-button.display:hover,
+a.complete-task-button.display:focus {
+  background-color: var(--highlight-dimmed);
+  color: var(--text-on-highlight);
+}
+a.complete-task-button.display:focus-visible {
+  outline: 2px solid var(--highlight-dimmed);
+  outline-offset: 1px;
+}
