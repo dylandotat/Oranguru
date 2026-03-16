@@ -1346,6 +1346,9 @@ async function startApp() {
   if (attr("save") == "service") {
     await tryLocalPair();
   }
+  if (localStorage.getItem("user.userID") !== null) {
+    await pullState();
+  }
   if (isNewDay()) {
     updateValues();
   }
