@@ -55,6 +55,9 @@
               <label>
                 <input tabindex="0" id="editmode-to-inbox" type="radio" name="editmodes"> Inbox
               </label>
+              <label>
+                <input tabindex="0" id="editmode-delete" type="radio" name="editmodes"> Delete permanently
+              </label>
             </div>
             <p class="before-compact">
               To make other changes to your completed tasks:
@@ -272,6 +275,15 @@
         localStorage.setItem("achievements", achievementsCached);
       }
 
+      function deleteTask(indexDay, indexTask) {
+        achievementsParsed[indexDay].tasks.splice(indexTask, 1);
+        if (achievementsParsed[indexDay].tasks.length == 0) {
+          achievementsParsed.splice(indexDay, 1);
+        }
+        achievementsCached = JSON.stringify(achievementsParsed);
+        localStorage.setItem("achievements", achievementsCached);
+      }
+
       function displayTasks() {
         const weekdayNameByDate = buildWeekdayNameByDate();
         for (let indexDay = 0; indexDay < achievementsParsed.length; indexDay++) {
@@ -305,7 +317,11 @@
               if (editingState != "editing") {
                 return;
               }
-              moveTaskBack(indexDay, indexTask);
+              if (dom.editmodes.delete.checked) {
+                deleteTask(indexDay, indexTask);
+              } else {
+                moveTaskBack(indexDay, indexTask);
+              }
               setView();
             });
             domTaskText.addEventListener("keydown", event => {
@@ -482,7 +498,8 @@
         selectEditmode: document.getElementById("select-editmode"),
         editmodes: {
           toToday: document.getElementById("editmode-to-today"),
-          toInbox: document.getElementById("editmode-to-inbox")
+          toInbox: document.getElementById("editmode-to-inbox"),
+          delete: document.getElementById("editmode-delete")
         },
         editExport: document.getElementById("actions-edit-export"),
         editImport: document.getElementById("actions-edit-import"),
