@@ -119,13 +119,17 @@ async function storeIcons() {
   storedIcons.icon32Notify = await getObjectURL(3);
 }
 
+function tabElement(tab) {
+  return tab === "future" ? dom.tabFuture : dom[tab];
+}
+
 function switchToTab(tab) {
   if (tab != selectedTab) {
-    dom[tab].classList.add("selected");
-    dom[tab].tabIndex = -1;
-    dom[tab].blur();
-    dom[selectedTab].classList.remove("selected");
-    dom[selectedTab].tabIndex = 0;
+    tabElement(tab).classList.add("selected");
+    tabElement(tab).tabIndex = -1;
+    tabElement(tab).blur();
+    tabElement(selectedTab).classList.remove("selected");
+    tabElement(selectedTab).tabIndex = 0;
     dom.editor[tab].classList.add("display");
     dom.editor[selectedTab].classList.remove("display");
     selectedTab = tab;
@@ -654,6 +658,40 @@ function updateCompleted(lines, offset) {
   storeThenSave("achievements", JSON.stringify(achievements));
 }
 
+function processFutureTasks(futureValue) {
+  const today = new OranguruDate();
+  const lines = futureValue.split("\n");
+  const dueTodayLines = [];
+  const remainingLines = [];
+  for (const line of lines) {
+    const dayMatch = line.match(/^\+(\d+) (.*)/s);
+    if (dayMatch) {
+      const n = parseInt(dayMatch[1]);
+      if (n <= 1) {
+        dueTodayLines.push(dayMatch[2]);
+      } else {
+        remainingLines.push(`+${n - 1} ${dayMatch[2]}`);
+      }
+      continue;
+    }
+    const dateMatch = line.match(/^(\d{4})\.(\d{1,2})\.(\d{1,2}) (.*)/s);
+    if (dateMatch) {
+      const taskDate = new Date(parseInt(dateMatch[1]), parseInt(dateMatch[2]) - 1, parseInt(dateMatch[3]));
+      if (taskDate <= today.object) {
+        dueTodayLines.push(dateMatch[4]);
+      } else {
+        remainingLines.push(line);
+      }
+      continue;
+    }
+    remainingLines.push(line);
+  }
+  return {
+    dueToday: dueTodayLines.join("\n"),
+    remaining: remainingLines.join("\n")
+  };
+}
+
 function updateValues() {
   const weekdayToday = (new OranguruDate()).getWeekdayIndex();
   const key = weekdayKeys[weekdayToday];
@@ -662,9 +700,11 @@ function updateValues() {
   let storedInboxValue = unsnoozeEverything(localStorage.getItem("value.inbox"));
   storedInboxValue = appendToTopAndRemoveDupes(storedInboxValue, routine);
   storedInboxValue = appendToTopAndRemoveDupes(storedInboxValue, storedTodayValue);
+  const { dueToday, remaining } = processFutureTasks(localStorage.getItem("value.future") || "");
   ydocBatching = true;
-  storeThenSave("value.today", "");
+  storeThenSave("value.today", dueToday);
   storeThenSave("value.inbox", storedInboxValue);
+  storeThenSave("value.future", remaining);
   ydocBatching = false;
   persistYDoc();
 }
@@ -758,6 +798,36 @@ function toggleSnap() {
   }
 }
 
+function setFuture() {
+  if (localStorage.getItem("ui.future") == "enabled") {
+    dom.tabFuture.classList.add("display");
+    dom.editor.future.classList.add("display");
+    dom.disableFuture.classList.add("display");
+    dom.enableFuture.classList.remove("display");
+  }
+  dom.enableFuture.addEventListener("click", event => {
+    event.preventDefault();
+    localStorage.setItem("ui.future", "enabled");
+    dom.tabFuture.classList.add("display");
+    dom.editor.future.classList.add("display");
+    dom.disableFuture.classList.add("display");
+    dom.enableFuture.classList.remove("display");
+    dom.menu.classList.remove("display");
+  });
+  dom.disableFuture.addEventListener("click", event => {
+    event.preventDefault();
+    localStorage.removeItem("ui.future");
+    dom.tabFuture.classList.remove("display");
+    dom.editor.future.classList.remove("display");
+    dom.enableFuture.classList.add("display");
+    dom.disableFuture.classList.remove("display");
+    if (selectedTab == "future") {
+      switchToTab("today");
+    }
+    dom.menu.classList.remove("display");
+  });
+}
+
 function setExportAndSave() {
   dom.exportData.addEventListener("click", () => {
     const dataJSON = createDataJSON();
@@ -821,6 +891,7 @@ function createData() {
     date: localStorage.getItem("date"),
     today: localStorage.getItem("value.today").trim(),
     inbox: localStorage.getItem("value.inbox").trim(),
+    future: localStorage.getItem("value.future").trim(),
     routine: {}
   };
   for (const key of weekdayKeys) {
@@ -896,6 +967,7 @@ function createSyncState() {
     date: localStorage.getItem("date"),
     today: localStorage.getItem("value.today").trim(),
     inbox: localStorage.getItem("value.inbox").trim(),
+    future: localStorage.getItem("value.future").trim(),
     routine: {}
   };
   for (const key of weekdayKeys) {
@@ -916,6 +988,7 @@ function applySyncState(state) {
     localStorage.setItem("date", state.date || "");
     localStorage.setItem("value.today", state.today || "");
     localStorage.setItem("value.inbox", state.inbox || "");
+    localStorage.setItem("value.future", state.future || "");
     for (const key of weekdayKeys) {
       localStorage.setItem(`routine.${key}`, (state.routine && state.routine[key]) || "");
     }
@@ -969,6 +1042,9 @@ function syncTextToYDoc(storageKey, newValue) {
   }
   else if (storageKey === "value.inbox") {
     ytextKey = "inbox";
+  }
+  else if (storageKey === "value.future") {
+    ytextKey = "future";
   }
   else if (storageKey === "date") {
     ytextKey = "date";
@@ -1036,6 +1112,7 @@ function applyYDocToLocalStorage() {
   localStorage.setItem("date", yTexts["date"].toString());
   localStorage.setItem("value.today", yTexts["today"].toString());
   localStorage.setItem("value.inbox", yTexts["inbox"].toString());
+  localStorage.setItem("value.future", yTexts["future"].toString());
   for (const key of weekdayKeys) {
     localStorage.setItem(`routine.${key}`, yTexts[`routine.${key}`].toString());
   }
@@ -1053,6 +1130,7 @@ function applyLegacyStateToYDoc(state) {
     applyTextDiff(yTexts["date"], yTexts["date"].toString(), state.date || "");
     applyTextDiff(yTexts["today"], yTexts["today"].toString(), state.today || "");
     applyTextDiff(yTexts["inbox"], yTexts["inbox"].toString(), state.inbox || "");
+    applyTextDiff(yTexts["future"], yTexts["future"].toString(), state.future || "");
     for (const key of weekdayKeys) {
       applyTextDiff(
         yTexts[`routine.${key}`],
@@ -1071,6 +1149,7 @@ async function initYDoc() {
   ydoc = new Y.Doc();
   yTexts["today"] = ydoc.getText("today");
   yTexts["inbox"] = ydoc.getText("inbox");
+  yTexts["future"] = ydoc.getText("future");
   yTexts["date"] = ydoc.getText("date");
   for (const key of weekdayKeys) {
     yTexts[`routine.${key}`] = ydoc.getText(`routine.${key}`);
@@ -1089,6 +1168,7 @@ async function initYDoc() {
       // isNewDay() return true and incorrectly move Today items into the Inbox.
       yTexts["today"].insert(0, localStorage.getItem("value.today") || "");
       yTexts["inbox"].insert(0, localStorage.getItem("value.inbox") || "");
+      yTexts["future"].insert(0, localStorage.getItem("value.future") || "");
       for (const key of weekdayKeys) {
         yTexts[`routine.${key}`].insert(0, localStorage.getItem(`routine.${key}`) || "");
       }
@@ -1343,6 +1423,7 @@ function reportServiceFailure() {
 
 async function startApp() {
   setSnap();
+  setFuture();
   setExportAndSave();
   setSyncButtons();
   await initYDoc();
@@ -1466,6 +1547,39 @@ async function startApp() {
       dom.editor.inbox.focus();
     }
   });
+  dom.editor.future.addEventListener("input", () => {
+    storeThenSave("value.future", dom.editor.future.value);
+  });
+  dom.editor.future.addEventListener("keydown", event => {
+    if (matchKeyboardEvent(event, "c", "x")) {
+      selectTaskIfNoSelection(dom.editor.future);
+      return;
+    }
+    if (localStorage.getItem("achievements") !== null) {
+      if (matchKeyboardEvent(event, "c", "k")) {
+        event.preventDefault();
+        completeSelected(dom.editor.future, "value.future", "");
+        return;
+      }
+    }
+  });
+  dom.editor.future.addEventListener("blur", () => {
+    if (localStorage.getItem("user.userID") !== null) {
+      window.clearTimeout(timeoutSync);
+      pushState();
+    }
+  });
+  dom.tabFuture.addEventListener("click", () => {
+    switchToTab("future");
+    refreshInfo();
+  });
+  dom.tabFuture.addEventListener("keydown", event => {
+    if (matchKeyboardEvent(event, "", "enter") || matchKeyboardEvent(event, "", " ")) {
+      event.preventDefault();
+      dom.tabFuture.click();
+      dom.editor.future.focus();
+    }
+  });
   if (localStorage.getItem("achievements") !== null) {
     dom.completeTaskButton.classList.add("display");
   }
@@ -1477,6 +1591,10 @@ async function startApp() {
     if (selectedTab == "today") {
       completeSelected(dom.editor.today, "value.today", "");
       dom.editor.today.focus();
+    }
+    else if (selectedTab == "future") {
+      completeSelected(dom.editor.future, "value.future", "");
+      dom.editor.future.focus();
     }
     else {
       completeSelected(dom.editor.inbox, "value.inbox", "");
@@ -1513,6 +1631,9 @@ async function startApp() {
     dom.menu.classList.remove("display");
   });
   dom.editor.inbox.addEventListener("focusin", () => {
+    dom.menu.classList.remove("display");
+  });
+  dom.editor.future.addEventListener("focusin", () => {
     dom.menu.classList.remove("display");
   });
   dom.editor.today.addEventListener("blur", () => {
@@ -1579,6 +1700,12 @@ async function startApp() {
       event.preventDefault();
       switchToTab("inbox");
       dom.editor.inbox.focus();
+      refreshInfo();
+    }
+    else if (matchKeyboardEvent(event, "c", "f") && localStorage.getItem("ui.future") == "enabled") {
+      event.preventDefault();
+      switchToTab("future");
+      dom.editor.future.focus();
       refreshInfo();
     }
     else if (matchKeyboardEvent(event, "cs", "i")) {
@@ -1760,6 +1887,9 @@ if (localStorage.getItem("value.today") === null) {
 if (localStorage.getItem("value.inbox") === null) {
   localStorage.setItem("value.inbox", "");
 }
+if (localStorage.getItem("value.future") === null) {
+  localStorage.setItem("value.future", "");
+}
 for (const key of weekdayKeys) {
   if (localStorage.getItem(`routine.${key}`) === null) {
     localStorage.setItem(`routine.${key}`, "");
@@ -1782,10 +1912,14 @@ const dom = {
   welcome: document.getElementById("welcome"),
   editor: {
     today: document.getElementById("editor-today"),
-    inbox: document.getElementById("editor-inbox")
+    inbox: document.getElementById("editor-inbox"),
+    future: document.getElementById("editor-future")
   },
   today: document.getElementById("tab-today"),
   inbox: document.getElementById("tab-inbox"),
+  tabFuture: document.getElementById("tab-future"),
+  enableFuture: document.getElementById("enable-future"),
+  disableFuture: document.getElementById("disable-future"),
   info: document.getElementById("tab-info"),
   fetchConnected: document.getElementById("fetch-connected"),
   menuButton: document.getElementById("menu-button"),
