@@ -16,7 +16,7 @@ class WriteError(PermissionError):
 class WrongVersionError(Exception):
     def __init__(self, port: int, version: str):
         super().__init__(
-            f"version {version} of Frogtab Local is running on port {port}"
+            f"version {version} of Oranguru Local is running on port {port}"
         )
         self.port = port
         self.version = version
@@ -30,11 +30,11 @@ class WrongAppError(Exception):
 
 class RunningError(Exception):
     def __init__(self, port: int):
-        super().__init__(f"Frogtab Local is running on port {port}")
+        super().__init__(f"Oranguru Local is running on port {port}")
         self.port = port
 
 
 class NotRunningError(Exception):
     def __init__(self, port: int):
-        super().__init__(f"Frogtab Local is not running on port {port}")
+        super().__init__(f"Oranguru Local is not running on port {port}")
         self.port = port

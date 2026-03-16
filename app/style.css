@@ -9,11 +9,11 @@
   --menu-spacer: #e0e0e0;
   --subtle-region: #e0e0e0;
   --notification: #ed2024;
-  --highlight: #79c152;
-  --highlight-dimmed: #64a83c;
+  --highlight: #f97316;
+  --highlight-dimmed: #ea580c;
   --text-on-highlight: #fff;
 }
-/* Dark theme case 1: System is dark and Frogtab is set to match system */
+/* Dark theme case 1: System is dark and Oranguru is set to match system */
 @media (prefers-color-scheme: dark) {
   :root[data-theme="system"] {
     color-scheme: dark;
@@ -26,7 +26,7 @@
     --subtle-region: #2c2c2c;
   }
 }
-/* Dark theme case 2: Frogtab is set to dark */
+/* Dark theme case 2: Oranguru is set to dark */
 :root[data-theme="dark"] {
   color-scheme: dark;
   --body-background: #0c0c0c;

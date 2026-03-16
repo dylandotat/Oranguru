@@ -3,9 +3,9 @@
 mkdir -p "$SNAP_USER_COMMON"
 cd "$SNAP_USER_COMMON"
 if [ "$1" = "--version" ] || [ "$1" = "-V" ]; then
-    echo "Frogtab Local $SNAP_VERSION"
+    echo "Oranguru Local $SNAP_VERSION"
 elif [ "$1" = "help" ] || [ "$1" = "--help" ] || [ "$1" = "-h" ]; then
-    "$SNAP/bin/frogtab" help --snap
+    "$SNAP/bin/oranguru" help --snap
 else
-    FROGTAB_PORTS_FILE="$SNAP_COMMON/ports" "$SNAP/bin/frogtab" "$@"
+    ORANGURU_PORTS_FILE="$SNAP_COMMON/ports" "$SNAP/bin/oranguru" "$@"
 fi

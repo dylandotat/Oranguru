@@ -10,18 +10,18 @@ import markdown
 
 def main():
     token = os.getenv("GITHUB_TOKEN")
-    repo = Github(token).get_repo("dwilding/frogtab")
+    repo = Github(token).get_repo("dwilding/oranguru")
     closed_prs = repo.get_pulls(state="closed")
     release_prs = [pr for pr in closed_prs if include_pr(pr)]
     sorted_prs = sorted(release_prs, key=lambda pr: pr.merged_at)
     feed = FeedGenerator()
-    feed.id("https://frogtab.com/changes.xml")
-    feed.link(href="https://frogtab.com/changes.xml", rel="self")
+    feed.id("https://oranguru.com/changes.xml")
+    feed.link(href="https://oranguru.com/changes.xml", rel="self")
     feed.link(
-        href="https://github.com/dwilding/frogtab/pulls?q=state%3Amerged+label%3Aserver+sort%3Acreated-desc",
+        href="https://github.com/dwilding/oranguru/pulls?q=state%3Amerged+label%3Aserver+sort%3Acreated-desc",
         rel="alternate",
     )
-    feed.title("Frogtab changes that affect server installations")
+    feed.title("Oranguru changes that affect server installations")
     for pr in sorted_prs:
         entry = feed.add_entry()
         entry.id(pr.html_url)

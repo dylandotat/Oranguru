@@ -39,22 +39,22 @@ if [ ! "$2" = "--overwrite" ] && [ -n "$(find -L "$public" -mindepth 1 -print -q
 fi
 
 # Fetch the source
-if [ ! "$2" = "--overwrite" ] && [ -d "frogtab" ]; then
-  echo "Source code directory '$protected/frogtab' already exists"
+if [ ! "$2" = "--overwrite" ] && [ -d "oranguru" ]; then
+  echo "Source code directory '$protected/oranguru' already exists"
   require_user_approval
 fi
 print_help "Downloading source code…"
-wget -O frogtab.zip "https://github.com/dwilding/frogtab/archive/refs/heads/$branch.zip"
-rm -rf frogtab
-unzip frogtab.zip -d frogtab
-rm frogtab.zip
+wget -O oranguru.zip "https://github.com/dwilding/oranguru/archive/refs/heads/$branch.zip"
+rm -rf oranguru
+unzip oranguru.zip -d oranguru
+rm oranguru.zip
 
 # Build the server and prepare the public directory
 print_help "Installing server…"
-cd "$protected/frogtab"
-mv frogtab-$branch/app frogtab-$branch/server .
-"frogtab-$branch/scripts/build_server.sh" "$protected/frogtab.db" "$protected/frogtab.toml"
-rm -rf "frogtab-$branch"
+cd "$protected/oranguru"
+mv oranguru-$branch/app oranguru-$branch/server .
+"oranguru-$branch/scripts/build_server.sh" "$protected/oranguru.db" "$protected/oranguru.toml"
+rm -rf "oranguru-$branch"
 rm -rf app
 rm -rf "$public"/*
 mv server/public/* "$public"

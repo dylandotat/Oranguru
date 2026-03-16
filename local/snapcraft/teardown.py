@@ -3,7 +3,7 @@
 from pathlib import Path
 import os
 
-import frogtab
+import oranguru
 
 
 def main():
@@ -12,8 +12,8 @@ def main():
     ports_path.write_text("")
     for port in ports:
         try:
-            frogtab.stop(int(port))
-        except frogtab.WrongAppError:
+            oranguru.stop(int(port))
+        except oranguru.WrongAppError:
             pass
 
 

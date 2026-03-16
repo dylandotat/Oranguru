@@ -1,6 +1,6 @@
 {
-    "name": "Frogtab",
-    "short_name": "Frogtab",
+    "name": "Oranguru",
+    "short_name": "Oranguru",
     "description": "A lightweight task manager that helps you stay focused on today's priorities",
     "start_url": "/",
     "display": "standalone",
