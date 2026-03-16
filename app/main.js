@@ -1463,6 +1463,25 @@ async function startApp() {
       dom.editor.inbox.focus();
     }
   });
+  if (localStorage.getItem("achievements") !== null) {
+    dom.completeTaskButton.classList.add("display");
+  }
+  dom.completeTaskButton.addEventListener("click", event => {
+    event.preventDefault();
+    if (localStorage.getItem("achievements") === null) {
+      return;
+    }
+    if (selectedTab == "today") {
+      completeSelected(dom.editor.today, "value.today", "");
+      dom.editor.today.focus();
+    }
+    else {
+      completeSelected(dom.editor.inbox, "value.inbox", "");
+      setNotifyStatus();
+      refreshInfo();
+      dom.editor.inbox.focus();
+    }
+  });
   dom.menuButton.addEventListener("click", event => {
     event.preventDefault();
     if (!dom.menu.classList.contains("display")) {
@@ -1776,7 +1795,8 @@ const dom = {
   syncSave: document.getElementById("sync-save"),
   syncLoad: document.getElementById("sync-load"),
   popupSavePaused: document.getElementById("popup-save-paused"),
-  popupSaveFailed: document.getElementById("popup-save-failed")
+  popupSaveFailed: document.getElementById("popup-save-failed"),
+  completeTaskButton: document.getElementById("complete-task-button")
 };
 if (showWelcome) {
   dom.welcome.classList.add("display");
